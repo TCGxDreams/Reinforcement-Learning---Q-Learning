@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Q-Learning – Oẳn Tù Xì</title>
+  <meta name="description"
+    content="Tìm hiểu thuật toán Q-Learning qua trò chơi Oẳn Tù Xì với giải thích công thức và mô phỏng tương tác.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #0f1117;
+      --bg-card: rgba(255, 255, 255, 0.04);
+      --bg-card-hover: rgba(255, 255, 255, 0.07);
+      --bg-input: rgba(255, 255, 255, 0.06);
+      --bg-highlight: rgba(55, 138, 221, 0.12);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(255, 255, 255, 0.18);
+      --text-primary: #e8e6e1;
+      --text-secondary: #9b998f;
+      --text-tertiary: #6b6960;
+      --accent: #378ADD;
+      --accent-glow: rgba(55, 138, 221, 0.25);
+      --red: #E24B4A;
+      --green: #639922;
+      --orange: #BA7517;
+      --tag-a-bg: rgba(226, 75, 74, 0.12);
+      --tag-a-text: #f08786;
+      --tag-g-bg: rgba(55, 138, 221, 0.12);
+      --tag-g-text: #7bb8f0;
+      --tag-e-bg: rgba(99, 153, 34, 0.12);
+      --tag-e-text: #a0cc5e;
+      --tag-r-bg: rgba(186, 117, 23, 0.12);
+      --tag-r-text: #daa64e;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.15);
+      --shadow-glow: 0 0 20px var(--accent-glow);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Hero Header ── */
+    .hero {
+      text-align: center;
+      padding: 48px 24px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 300px;
+      background: radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .hero h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #e8e6e1 30%, #378ADD 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+    }
+
+    .hero .subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      position: relative;
+    }
+
+    /* ── Tab Bar ── */
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      padding: 0 24px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .tab-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 24px;
+      right: 24px;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .tab-btn {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      padding: 10px 20px;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.25s ease;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 12px;
+      right: 12px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px 2px 0 0;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .tab-btn .tab-icon {
+      margin-right: 6px;
+      font-size: 16px;
+    }
+
+    /* ── Tab Content ── */
+    .tab-content {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px 48px;
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-card);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--border-active);
+      background: var(--bg-card-hover);
+    }
+
+    .card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card p {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-secondary);
+    }
+
+    .card p b {
+      color: var(--text-primary);
+    }
+
+    /* ── Formula Box ── */
+    .formula-box {
+      background: linear-gradient(135deg, rgba(55, 138, 221, 0.08), rgba(99, 153, 34, 0.06));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px 28px;
+      margin-bottom: 22px;
+      text-align: center;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .formula {
+      font-size: 18px;
+      font-family: var(--font-mono);
+      line-height: 2;
+      color: var(--text-primary);
+    }
+
+    .formula .alpha {
+      color: var(--red);
+      font-weight: 500;
+    }
+
+    .formula .gamma {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .formula .eps {
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    .formula .reward {
+      color: var(--orange);
+      font-weight: 500;
+    }
+
+    /* ── Tags ── */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      letter-spacing: 0.3px;
+    }
+
+    .tag-a {
+      background: var(--tag-a-bg);
+      color: var(--tag-a-text);
+    }
+
+    .tag-g {
+      background: var(--tag-g-bg);
+      color: var(--tag-g-text);
+    }
+
+    .tag-e {
+      background: var(--tag-e-bg);
+      color: var(--tag-e-text);
+    }
+
+    .tag-r {
+      background: var(--tag-r-bg);
+      color: var(--tag-r-text);
+    }
+
+    /* ── Example block ── */
+    .example {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.9;
+      color: var(--text-secondary);
+    }
+
+    .example b {
+      color: var(--text-primary);
+    }
+
+    /* ── Separator ── */
+    .sep {
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    /* ── Sliders ── */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 10px 0;
+    }
+
+    .slider-row label {
+      font-size: 14px;
+      min-width: 24px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .slider-row input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+
+    .slider-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 6px var(--accent-glow);
+      transition: transform 0.15s;
+    }
+
+    .slider-row input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .slider-row span {
+      font-size: 14px;
+      font-weight: 600;
+      min-width: 40px;
+      color: var(--accent);
+      font-family: var(--font-mono);
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .demo-cell {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .demo-cell .dl {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .demo-cell .dv {
+      font-size: 22px;
+      font-weight: 600;
+      margin-top: 4px;
+      font-family: var(--font-mono);
+    }
+
+    /* ══════════ TAB 2 – Simulation ══════════ */
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 640px) {
+      .sim-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .params-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .params-bar label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .params-bar input[type=number] {
+      width: 72px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .params-bar input[type=number]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .btn-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-active);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #2d6db8);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4a9be8, var(--accent));
+      border-color: #4a9be8;
+    }
+
+    .btn-danger {
+      border-color: rgba(226, 75, 74, 0.3);
+      color: var(--red);
+    }
+
+    .btn-danger:hover {
+      background: rgba(226, 75, 74, 0.08);
+      border-color: var(--red);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      font-family: var(--font-mono);
+    }
+
+    th,
+    td {
+      padding: 8px 10px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      font-weight: 500;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hl {
+      background: var(--bg-highlight);
+      color: var(--accent);
+      font-weight: 600;
+      border-radius: 4px;
+    }
+
+    .metric {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      text-align: center;
+    }
+
+    .metric .lb {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .metric .vl {
+      font-size: 22px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .sim-log {
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      line-height: 1.9;
+      color: var(--text-secondary);
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+
+    .sim-log::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sim-log::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .w {
+      color: #8cc63f;
+    }
+
+    .l {
+      color: #f07070;
+    }
+
+    .d {
+      color: #daa64e;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Hero ── -->
+  <header class="hero">
+    <h1>Q-Learning × Oẳn Tù Xì</h1>
+    <p class="subtitle">Reinforcement Learning ứng dụng vào Kéo – Búa – Bao</p>
+  </header>
+
+  <!-- ── Tab Bar ── -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('explain')" id="tab-explain-btn">
+      <span class="tab-icon"></span>Giải thích công thức
+    </button>
+    <button class="tab-btn" onclick="switchTab('sim')" id="tab-sim-btn">
+      <span class="tab-icon"></span>Mô phỏng
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TAB 1: FORMULA EXPLAINED                          -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="tab-content">
+    <div class="tab-pane active" id="pane-explain">
+
+      <div class="formula-box">
+        <div class="formula" id="mainFormula"></div>
+      </div>
+
+      <div class="card" id="card-alpha">
+        <h3><span class="tag tag-a" id="tagA"></span> <span id="hA"></span></h3>
+        <p id="pA"></p>
+        <div class="example" id="exA"></div>
+      </div>
+
+      <div class="card" id="card-gamma">
+        <h3><span class="tag tag-g" id="tagG"></span> <span id="hG"></span></h3>
+        <p id="pG"></p>
+        <div class="example" id="exG"></div>
+      </div>
+
+      <div class="card" id="card-eps">
+        <h3><span class="tag tag-e" id="tagE"></span> <span id="hE"></span></h3>
+        <p id="pE"></p>
+        <div class="example" id="exE"></div>
+      </div>
+
+      <div class="card" id="card-reward">
+        <h3><span class="tag tag-r" id="tagR"></span> <span id="hR"></span></h3>
+        <p id="pR"></p>
+        <div class="example" id="exR"></div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="card">
+        <h3 id="hDemo"></h3>
+        <p id="pDemo" style="margin-bottom:10px;"></p>
+        <div class="slider-row">
+          <label id="slA"></label>
+          <input type="range" id="dAlpha" min="0" max="100" value="15">
+          <span id="dAlphaV">0.15</span>
+        </div>
+        <div class="slider-row">
+          <label id="slG"></label>
+          <input type="range" id="dGamma" min="0" max="100" value="80">
+          <span id="dGammaV">0.80</span>
+        </div>
+        <div id="demoSetup" style="font-size:13px;color:var(--text-secondary);margin:12px 0;"></div>
+        <div class="example" id="demoCalc"></div>
+        <div class="demo-grid">
+          <div class="demo-cell">
+            <div class="dl" id="dlOld"></div>
+            <div class="dv" id="dvOld">0.000</div>
+          </div>
+          <div class="demo-cell">
+            <div class="dl" id="dlNew"></div>
+            <div class="dv" id="dvNew" style="color:var(--accent);">0.000</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- TAB 2: SIMULATION                                 -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="tab-pane" id="pane-sim">
+
+      <div class="params-bar">
+        <label id="lbl-a"></label> <input type="number" id="alpha" value="0.1" step="0.05" min="0" max="1">
+        <label id="lbl-g"></label> <input type="number" id="gamma" value="0.9" step="0.05" min="0" max="1">
+        <label id="lbl-e"></label> <input type="number" id="epsilon" value="0.3" step="0.05" min="0" max="1">
+      </div>
+
+      <div class="btn-bar">
+        <button class="btn btn-primary" id="btn1"></button>
+        <button class="btn" id="btn10"></button>
+        <button class="btn" id="btn100"></button>
+        <button class="btn btn-danger" id="btnR"></button>
+      </div>
+
+      <div class="sim-grid">
+        <div class="card">
+          <h3 id="hQ"></h3>
+          <table id="qtable">
+            <thead>
+              <tr>
+                <th>State</th>
+                <th id="thA1"></th>
+                <th id="thA2"></th>
+                <th id="thA3"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3 id="hS"></h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="metric">
+              <div class="lb">Episodes</div>
+              <div class="vl" id="ep-count">0</div>
+            </div>
+            <div class="metric">
+              <div class="lb" id="lblWR"></div>
+              <div class="vl" id="win-rate">0%</div>
+            </div>
+            <div class="metric">
+              <div class="lb" id="lblW"></div>
+              <div class="vl" id="wins" style="color:#8cc63f">0</div>
+            </div>
+            <div class="metric">
+              <div class="lb" id="lblL"></div>
+              <div class="vl" id="losses" style="color:#f07070">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="card full">
+          <h3 id="hLog"></h3>
+          <div class="sim-log" id="log"></div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+
+    </div>
+  </div><!-- /tab-content -->
+
+  <!-- ── Scripts ── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script>
+    /* ═══ Tab switch ═══ */
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('active'); });
+      document.getElementById('tab-' + tab + '-btn').classList.add('active');
+      document.getElementById('pane-' + tab).classList.add('active');
+      // Re-render chart if switching to sim
+      if (tab === 'sim' && typeof updateChart === 'function') {
+        setTimeout(updateChart, 50);
+      }
+    }
+
+    /* ═══════════════════════════════════════════ */
+    /*  TAB 1: FORMULA EXPLAINED                  */
+    /* ═══════════════════════════════════════════ */
+    document.getElementById('mainFormula').innerHTML =
+      'Q(s,a) \u2190 Q(s,a) + <span class="alpha">\u03B1</span> \u00D7 [ <span class="reward">R</span> + <span class="gamma">\u03B3</span> \u00D7 max Q(s\',a\') - Q(s,a) ]';
+
+    // Alpha card
+    document.getElementById('tagA').textContent = '\u03B1';
+    document.getElementById('hA').textContent = 'Learning Rate (t\u1ED1c \u0111\u1ED9 h\u1ECDc)';
+    document.getElementById('pA').innerHTML =
+      '\u03B1 quy\u1EBFt \u0111\u1ECBnh agent h\u1ECDc <b>nhanh hay ch\u1EADm</b> t\u1EEB tr\u1EA3i nghi\u1EC7m m\u1EDBi. ' +
+      'Gi\u00E1 tr\u1ECB t\u1EEB 0 \u0111\u1EBFn 1.<br>' +
+      '\u2022 \u03B1 = 0: Kh\u00F4ng h\u1ECDc g\u00EC (Q kh\u00F4ng thay \u0111\u1ED5i)<br>' +
+      '\u2022 \u03B1 nh\u1ECF (0.01\u20130.1): H\u1ECDc ch\u1EADm, \u1ED5n \u0111\u1ECBnh<br>' +
+      '\u2022 \u03B1 l\u1EDBn (0.5\u20131.0): H\u1ECDc nhanh, nh\u01B0ng dao \u0111\u1ED9ng nhi\u1EC1u';
+    document.getElementById('exA').innerHTML =
+      'V\u00ED d\u1EE5: Q c\u0169 = 2.0, m\u1EE5c ti\u00EAu = 5.0<br>' +
+      '\u03B1=0.1 \u2192 Q m\u1EDBi = 2.0 + 0.1\u00D7(5.0 - 2.0) = <b>2.3</b> (ti\u1EBFn ch\u1EADm)<br>' +
+      '\u03B1=0.9 \u2192 Q m\u1EDBi = 2.0 + 0.9\u00D7(5.0 - 2.0) = <b>4.7</b> (ti\u1EBFn nhanh)';
+
+    // Gamma card
+    document.getElementById('tagG').textContent = '\u03B3';
+    document.getElementById('hG').textContent = 'Discount Factor (h\u1EC7 s\u1ED1 chi\u1EBFt kh\u1EA5u)';
+    document.getElementById('pG').innerHTML =
+      '\u03B3 quy\u1EBFt \u0111\u1ECBnh agent <b>coi tr\u1ECDng t\u01B0\u01A1ng lai bao nhi\u00EAu</b>. ' +
+      'Gi\u00E1 tr\u1ECB t\u1EEB 0 \u0111\u1EBFn 1.<br>' +
+      '\u2022 \u03B3 = 0: Ch\u1EC9 quan t\u00E2m ph\u1EA7n th\u01B0\u1EDFng tr\u01B0\u1EDBc m\u1EAFt (v\u00E1n hi\u1EC7n t\u1EA1i)<br>' +
+      '\u2022 \u03B3 = 0.9: Coi tr\u1ECDng c\u1EA3 bonus th\u1EAFng 2/3 v\u00E1n \u1EDF cu\u1ED1i<br>' +
+      '\u2022 \u03B3 = 1: Ph\u1EA7n th\u01B0\u1EDFng t\u01B0\u01A1ng lai quan tr\u1ECDng b\u1EB1ng hi\u1EC7n t\u1EA1i';
+    document.getElementById('exG').innerHTML =
+      'Trong b\u00E0i o\u1EB3n t\u00F9 x\u00EC v\u1EDBi 3 v\u00E1n:<br>' +
+      'V\u00E1n 1 (s1): R = +1, v\u00E0 max Q(s2) = 3.0<br>' +
+      '\u03B3=0.9 \u2192 m\u1EE5c ti\u00EAu = 1 + 0.9\u00D73.0 = <b>3.7</b> (t\u00EDnh c\u1EA3 ti\u1EC1m n\u0103ng s2)<br>' +
+      '\u03B3=0.0 \u2192 m\u1EE5c ti\u00EAu = 1 + 0\u00D73.0 = <b>1.0</b> (ch\u1EC9 v\u00E1n n\u00E0y)';
+
+    // Epsilon card
+    document.getElementById('tagE').textContent = '\u03B5';
+    document.getElementById('hE').textContent = 'Exploration Rate (t\u1EC9 l\u1EC7 kh\u00E1m ph\u00E1)';
+    document.getElementById('pE').innerHTML =
+      '\u03B5 c\u00E2n b\u1EB1ng gi\u1EEFa <b>khai th\u00E1c</b> (exploit: ch\u1ECDn action t\u1ED1t nh\u1EA5t \u0111\u00E3 bi\u1EBFt) ' +
+      'v\u00E0 <b>kh\u00E1m ph\u00E1</b> (explore: th\u1EED action ng\u1EABu nhi\u00EAn).<br>' +
+      '\u2022 \u03B5 = 0: Lu\u00F4n ch\u1ECDn action t\u1ED1t nh\u1EA5t (greedy) \u2192 c\u00F3 th\u1EC3 b\u1ECF l\u1EE1 action t\u1ED1t h\u01A1n<br>' +
+      '\u2022 \u03B5 = 0.3: 30% th\u1EED ng\u1EABu nhi\u00EAn, 70% ch\u1ECDn t\u1ED1t nh\u1EA5t<br>' +
+      '\u2022 \u03B5 = 1: Ho\u00E0n to\u00E0n ng\u1EABu nhi\u00EAn (kh\u00F4ng h\u1ECDc g\u00EC)';
+    document.getElementById('exE').innerHTML =
+      'N\u1EBFu Q(s1) = [K\u00E9o: 0.5, B\u00FAa: 1.2, Bao: 0.3]<br>' +
+      '\u03B5=0.3 \u2192 70% ch\u1ECDn B\u00FAa (Q cao nh\u1EA5t), 30% ch\u1ECDn ng\u1EABu nhi\u00EAn<br>' +
+      'Th\u01B0\u1EDDng gi\u1EA3m \u03B5 d\u1EA7n theo th\u1EDDi gian (\u03B5-decay)';
+
+    // Reward card
+    document.getElementById('tagR').textContent = 'R';
+    document.getElementById('hR').textContent = 'Reward (ph\u1EA7n th\u01B0\u1EDFng)';
+    document.getElementById('pR').innerHTML =
+      'Trong b\u00E0i o\u1EB3n t\u00F9 x\u00EC c\u1EE7a b\u1EA1n:<br>' +
+      '\u2022 Th\u1EAFng 1 v\u00E1n: R = <b>+1</b><br>' +
+      '\u2022 Thua 1 v\u00E1n: R = <b>-1</b><br>' +
+      '\u2022 H\u00F2a 1 v\u00E1n: R = <b>0</b><br>' +
+      '\u2022 V\u00E1n cu\u1ED1i (s3) n\u1EBFu th\u1EAFng 2/3: R += <b>+10</b> (bonus)';
+    document.getElementById('exR').innerHTML =
+      'Agent th\u1EAFng v\u00E1n 1 (+1), thua v\u00E1n 2 (-1), th\u1EAFng v\u00E1n 3 (+1)<br>' +
+      '\u2192 Th\u1EAFng 2/3 v\u00E1n \u2192 v\u00E1n 3 nh\u1EADn: R = 1 + 10 = <b>+11</b>';
+
+    // Demo section
+    document.getElementById('hDemo').textContent = 'Th\u1EED t\u00EDnh Q-value';
+    document.getElementById('pDemo').textContent = 'K\u00E9o slider \u0111\u1EC3 xem c\u00F4ng th\u1EE9c thay \u0111\u1ED5i:';
+    document.getElementById('slA').textContent = '\u03B1';
+    document.getElementById('slG').textContent = '\u03B3';
+    document.getElementById('dlOld').textContent = 'Q c\u0169';
+    document.getElementById('dlNew').textContent = 'Q m\u1EDBi';
+
+    var Qold = 0.5, R_demo = 1, maxNext = 2.0;
+    function updateDemo() {
+      var a = parseInt(document.getElementById('dAlpha').value) / 100;
+      var g = parseInt(document.getElementById('dGamma').value) / 100;
+      document.getElementById('dAlphaV').textContent = a.toFixed(2);
+      document.getElementById('dGammaV').textContent = g.toFixed(2);
+      var target = R_demo + g * maxNext;
+      var Qnew = Qold + a * (target - Qold);
+      document.getElementById('demoSetup').innerHTML =
+        'Gi\u1EA3 s\u1EED: Q(s1, K\u00E9o) = ' + Qold.toFixed(1) +
+        ', R = +' + R_demo + ' (th\u1EAFng), max Q(s2) = ' + maxNext.toFixed(1);
+      document.getElementById('demoCalc').innerHTML =
+        'M\u1EE5c ti\u00EAu = R + \u03B3 \u00D7 max Q(s2) = ' + R_demo + ' + ' + g.toFixed(2) + ' \u00D7 ' + maxNext.toFixed(1) + ' = <b>' + target.toFixed(2) + '</b><br>' +
+        'Q m\u1EDBi = ' + Qold.toFixed(1) + ' + ' + a.toFixed(2) + ' \u00D7 (' + target.toFixed(2) + ' - ' + Qold.toFixed(1) + ') = <b>' + Qnew.toFixed(3) + '</b>';
+      document.getElementById('dvOld').textContent = Qold.toFixed(3);
+      document.getElementById('dvNew').textContent = Qnew.toFixed(3);
+    }
+    document.getElementById('dAlpha').oninput = updateDemo;
+    document.getElementById('dGamma').oninput = updateDemo;
+    updateDemo();
+
+
+    /* ═══════════════════════════════════════════ */
+    /*  TAB 2: SIMULATION                         */
+    /* ═══════════════════════════════════════════ */
+    var ACT = ['K\u00e9o', 'B\u00faa', 'Bao'];
+    var EMJ = ['\u270C\uFE0F', '\u270A', '\uD83D\uDD90\uFE0F'];
+    var ST = ['s1', 's2', 's3'];
+
+    document.getElementById('lbl-a').textContent = '\u03B1 (learning rate):';
+    document.getElementById('lbl-g').textContent = '\u03B3 (discount):';
+    document.getElementById('lbl-e').textContent = '\u03B5 (exploration):';
+    document.getElementById('btn1').textContent = 'Ch\u1EA1y 1 episode';
+    document.getElementById('btn10').textContent = 'Ch\u1EA1y 10';
+    document.getElementById('btn100').textContent = 'Ch\u1EA1y 100';
+    document.getElementById('btnR').textContent = 'Reset';
+    document.getElementById('hQ').textContent = 'Q-table (agent)';
+    document.getElementById('hS').textContent = 'Th\u1ED1ng k\u00EA';
+    document.getElementById('hLog').textContent = 'Log chi ti\u1EBFt (episode g\u1EA7n nh\u1EA5t)';
+    document.getElementById('thA1').textContent = 'K\u00e9o (1)';
+    document.getElementById('thA2').textContent = 'B\u00faa (2)';
+    document.getElementById('thA3').textContent = 'Bao (3)';
+    document.getElementById('lblWR').textContent = 'T\u1EC9 l\u1EC7 th\u1EAFng';
+    document.getElementById('lblW').textContent = 'Th\u1EAFng';
+    document.getElementById('lblL').textContent = 'Thua';
+    document.getElementById('log').textContent = 'Nh\u1EA5n "Ch\u1EA1y 1 episode" \u0111\u1EC3 b\u1EAFt \u0111\u1EA7u...';
+
+    document.getElementById('btn1').onclick = function () { runOne(false); };
+    document.getElementById('btn10').onclick = function () { runN(10); };
+    document.getElementById('btn100').onclick = function () { runN(100); };
+    document.getElementById('btnR').onclick = resetAll;
+
+    var Q = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    var stats = { ep: 0, w: 0, l: 0, d: 0 };
+    var wrHist = [];
+
+    function reward(ag, op) {
+      if (ag === op) return 0;
+      if ((ag === 0 && op === 2) || (ag === 1 && op === 0) || (ag === 2 && op === 1)) return -1;
+      return 1;
+    }
+
+    function pick(s, eps) {
+      if (Math.random() < eps) return Math.floor(Math.random() * 3);
+      var b = 0; for (var a = 1; a < 3; a++) if (Q[s][a] > Q[s][b]) b = a; return b;
+    }
+
+    function runOne(silent) {
+      var al = parseFloat(document.getElementById('alpha').value);
+      var gm = parseFloat(document.getElementById('gamma').value);
+      var ep = parseFloat(document.getElementById('epsilon').value);
+      var rw = 0, rl = 0, lines = [];
+
+      for (var s = 0; s < 3; s++) {
+        var act = pick(s, ep);
+        var opp = Math.floor(Math.random() * 3);
+        var r = reward(act, opp);
+        var cls = r > 0 ? 'w' : r < 0 ? 'l' : 'd';
+        var txt = r > 0 ? 'TH\u1EAENG' : r < 0 ? 'THUA' : 'H\u00d2A';
+        if (r > 0) rw++; if (r < 0) rl++;
+
+        if (s < 2) {
+          var mx = Math.max(Q[s + 1][0], Q[s + 1][1], Q[s + 1][2]);
+          Q[s][act] += al * (r + gm * mx - Q[s][act]);
+        } else {
+          var br = r;
+          if (rw >= 2) br += 10; else if (rl >= 2) br -= 5;
+          Q[s][act] += al * (br - Q[s][act]);
+        }
+        lines.push('<span class="' + cls + '">V\u00e1n ' + (s + 1) + ' (' + ST[s] + '): Agent=' + ACT[act] + ' ' + EMJ[act] + ' vs \u0110\u1ED1i th\u1EE7=' + ACT[opp] + ' ' + EMJ[opp] + ' \u2192 ' + txt + ' (r=' + (r > 0 ? '+' : '') + r + ')</span>');
+      }
+
+      var mr = rw >= 2 ? 'w' : rl >= 2 ? 'l' : 'd';
+      if (mr === 'w') { stats.w++; lines.push('<span class="w"><b>\u2192 CHI\u1EBEN TH\u1EAENG tr\u1EADn (+10 bonus)</b></span>'); }
+      else if (mr === 'l') { stats.l++; lines.push('<span class="l"><b>\u2192 THUA tr\u1EADn (-5)</b></span>'); }
+      else { stats.d++; lines.push('<span class="d"><b>\u2192 H\u00d2A tr\u1EADn</b></span>'); }
+
+      stats.ep++;
+      wrHist.push(Math.round(stats.w / stats.ep * 100));
+
+      if (!silent) {
+        document.getElementById('log').innerHTML = lines.join('<br>');
+        updateUI();
+      }
+    }
+
+    function runN(n) { for (var i = 0; i < n - 1; i++)runOne(true); runOne(false); }
+
+    function resetAll() {
+      Q = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+      stats = { ep: 0, w: 0, l: 0, d: 0 };
+      wrHist = [];
+      document.getElementById('log').textContent = 'Nh\u1EA5n "Ch\u1EA1y 1 episode" \u0111\u1EC3 b\u1EAFt \u0111\u1EA7u...';
+      updateUI();
+    }
+
+    function updateUI() {
+      var tb = document.querySelector('#qtable tbody');
+      tb.innerHTML = '';
+      for (var s = 0; s < 3; s++) {
+        var mx = 0; for (var a = 1; a < 3; a++)if (Q[s][a] > Q[s][mx]) mx = a;
+        var row = '<tr><td style="font-weight:500;color:var(--text-primary)">' + ST[s] + '</td>';
+        for (var a = 0; a < 3; a++) {
+          var v = Q[s][a].toFixed(3);
+          row += '<td class="' + (a === mx && Q[s][a] !== 0 ? 'hl' : '') + '">' + v + '</td>';
+        }
+        tb.innerHTML += row + '</tr>';
+      }
+      document.getElementById('ep-count').textContent = stats.ep;
+      document.getElementById('wins').textContent = stats.w;
+      document.getElementById('losses').textContent = stats.l;
+      var rt = stats.ep > 0 ? Math.round(stats.w / stats.ep * 100) : 0;
+      document.getElementById('win-rate').textContent = rt + '%';
+      updateChart();
+    }
+
+    var ci = null;
+    function updateChart() {
+      var ctx = document.getElementById('chart');
+      if (!ctx) return;
+      if (ci) ci.destroy();
+      ci = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: wrHist.map(function (_, i) { return i + 1 }),
+          datasets: [{
+            label: 'Win rate %',
+            data: wrHist,
+            borderColor: '#378ADD',
+            backgroundColor: 'rgba(55,138,221,0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: wrHist.length > 50 ? 0 : 3,
+            pointBackgroundColor: '#378ADD',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 100, ticks: { callback: function (v) { return v + '%' }, color: '#6b6960' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            x: { title: { display: true, text: 'Episode', color: '#6b6960' }, ticks: { color: '#6b6960', maxTicksLimit: 10 }, grid: { display: false } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    updateUI();
+  </script>
+</body>
+
+</html>
