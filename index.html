@@ -13,21 +13,32 @@
     rel="stylesheet">
   <style>
     :root {
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --accent: #378ADD;
+      --red: #E24B4A;
+      --green: #639922;
+      --orange: #BA7517;
+    }
+
+    /* ── Dark Theme ── */
+    [data-theme="dark"] {
       --bg-page: #0f1117;
       --bg-card: rgba(255, 255, 255, 0.04);
       --bg-card-hover: rgba(255, 255, 255, 0.07);
       --bg-input: rgba(255, 255, 255, 0.06);
       --bg-highlight: rgba(55, 138, 221, 0.12);
+      --bg-example: rgba(255, 255, 255, 0.03);
       --border: rgba(255, 255, 255, 0.08);
       --border-active: rgba(255, 255, 255, 0.18);
       --text-primary: #e8e6e1;
       --text-secondary: #9b998f;
       --text-tertiary: #6b6960;
-      --accent: #378ADD;
       --accent-glow: rgba(55, 138, 221, 0.25);
-      --red: #E24B4A;
-      --green: #639922;
-      --orange: #BA7517;
       --tag-a-bg: rgba(226, 75, 74, 0.12);
       --tag-a-text: #f08786;
       --tag-g-bg: rgba(55, 138, 221, 0.12);
@@ -36,14 +47,54 @@
       --tag-e-text: #a0cc5e;
       --tag-r-bg: rgba(186, 117, 23, 0.12);
       --tag-r-text: #daa64e;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
-      --radius-xl: 18px;
-      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
       --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.15);
       --shadow-glow: 0 0 20px var(--accent-glow);
+      --slider-track: rgba(255, 255, 255, 0.1);
+      --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+      --sim-log-bg: rgba(255, 255, 255, 0.02);
+      --metric-bg: rgba(255, 255, 255, 0.03);
+      --tab-hover-bg: rgba(255, 255, 255, 0.03);
+      --hero-gradient-start: #e8e6e1;
+      --chart-tick: #6b6960;
+      --chart-grid: rgba(255, 255, 255, 0.04);
+      --win-color: #8cc63f;
+      --lose-color: #f07070;
+    }
+
+    /* ── Light Theme ── */
+    [data-theme="light"] {
+      --bg-page: #f5f7fa;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --bg-input: #f0f2f5;
+      --bg-highlight: rgba(55, 138, 221, 0.08);
+      --bg-example: #f7f8fa;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-active: rgba(0, 0, 0, 0.15);
+      --text-primary: #1a1d23;
+      --text-secondary: #5a5f6b;
+      --text-tertiary: #8b9099;
+      --accent-glow: rgba(55, 138, 221, 0.15);
+      --tag-a-bg: rgba(226, 75, 74, 0.08);
+      --tag-a-text: #c92a29;
+      --tag-g-bg: rgba(55, 138, 221, 0.08);
+      --tag-g-text: #1e6bb8;
+      --tag-e-bg: rgba(99, 153, 34, 0.08);
+      --tag-e-text: #4a7a15;
+      --tag-r-bg: rgba(186, 117, 23, 0.08);
+      --tag-r-text: #9a6010;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+      --shadow-glow: 0 0 20px var(--accent-glow);
+      --slider-track: rgba(0, 0, 0, 0.08);
+      --scrollbar-thumb: rgba(0, 0, 0, 0.12);
+      --sim-log-bg: #f7f8fa;
+      --metric-bg: #f7f8fa;
+      --tab-hover-bg: rgba(0, 0, 0, 0.03);
+      --hero-gradient-start: #1a1d23;
+      --chart-tick: #8b9099;
+      --chart-grid: rgba(0, 0, 0, 0.05);
+      --win-color: #4a8c10;
+      --lose-color: #d93636;
     }
 
     * {
@@ -86,7 +137,7 @@
       font-size: 32px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #e8e6e1 30%, #378ADD 100%);
+      background: linear-gradient(135deg, var(--hero-gradient-start) 30%, #378ADD 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -136,7 +187,7 @@
 
     .tab-btn:hover {
       color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--tab-hover-bg);
     }
 
     .tab-btn.active {
@@ -294,7 +345,7 @@
 
     /* ── Example block ── */
     .example {
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--bg-example);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 12px 16px;
@@ -335,7 +386,7 @@
       -webkit-appearance: none;
       height: 4px;
       border-radius: 4px;
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--slider-track);
       outline: none;
     }
 
@@ -370,7 +421,7 @@
     }
 
     .demo-cell {
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--bg-example);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 12px;
@@ -519,7 +570,7 @@
     }
 
     .metric {
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--metric-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       padding: 12px 14px;
@@ -548,7 +599,7 @@
       line-height: 1.9;
       color: var(--text-secondary);
       padding: 12px 14px;
-      background: rgba(255, 255, 255, 0.02);
+      background: var(--sim-log-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
     }
@@ -558,20 +609,79 @@
     }
 
     .sim-log::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--scrollbar-thumb);
       border-radius: 4px;
     }
 
     .w {
-      color: #8cc63f;
+      color: var(--win-color, #8cc63f);
     }
 
     .l {
-      color: #f07070;
+      color: var(--lose-color, #f07070);
     }
 
     .d {
-      color: #daa64e;
+      color: var(--orange);
+    }
+
+    /* ── Theme Toggle ── */
+    .theme-toggle {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-card);
+      z-index: 10;
+      padding: 0;
+    }
+    .theme-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: rotate(20deg) scale(1.05);
+    }
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Tab Icons (CSS) ── */
+    .tab-icon {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .tab-icon svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* smooth transition for theme switch */
+    body, .card, .formula-box, .example, .demo-cell, .metric, .sim-log,
+    .tab-btn, .btn, .params-bar input[type=number], .hero h1 {
+      transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
     }
 
     .full {
@@ -587,10 +697,14 @@
   </style>
 </head>
 
-<body>
+<body data-theme="light">
 
   <!-- ── Hero ── -->
   <header class="hero">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Chuyển chế độ sáng/tối">
+      <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      <svg id="icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    </button>
     <h1>Q-Learning × Oẳn Tù Xì</h1>
     <p class="subtitle">Reinforcement Learning ứng dụng vào Kéo – Búa – Bao</p>
   </header>
@@ -598,10 +712,10 @@
   <!-- ── Tab Bar ── -->
   <nav class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('explain')" id="tab-explain-btn">
-      <span class="tab-icon"></span>Giải thích công thức
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><path d="M2 20h20"></path><path d="M5 20V8l7-5 7 5v12"></path><path d="M10 20v-6h4v6"></path></svg></span>Giải thích công thức
     </button>
     <button class="tab-btn" onclick="switchTab('sim')" id="tab-sim-btn">
-      <span class="tab-icon"></span>Mô phỏng
+      <span class="tab-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"></rect><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><circle cx="16" cy="10" r="1" fill="currentColor"></circle><circle cx="18" cy="13" r="1" fill="currentColor"></circle></svg></span>Mô phỏng
     </button>
   </nav>
 
@@ -747,6 +861,24 @@
       if (tab === 'sim' && typeof updateChart === 'function') {
         setTimeout(updateChart, 50);
       }
+    }
+
+    /* ═══ Theme toggle ═══ */
+    function toggleTheme() {
+      var body = document.body;
+      var iconMoon = document.getElementById('icon-moon');
+      var iconSun = document.getElementById('icon-sun');
+      if (body.getAttribute('data-theme') === 'dark') {
+        body.setAttribute('data-theme', 'light');
+        iconMoon.style.display = '';
+        iconSun.style.display = 'none';
+      } else {
+        body.setAttribute('data-theme', 'dark');
+        iconMoon.style.display = 'none';
+        iconSun.style.display = '';
+      }
+      // Re-render chart with new colors
+      if (typeof updateChart === 'function') setTimeout(updateChart, 50);
     }
 
     /* ═══════════════════════════════════════════ */
@@ -960,6 +1092,9 @@
       var ctx = document.getElementById('chart');
       if (!ctx) return;
       if (ci) ci.destroy();
+      var cs = getComputedStyle(document.body);
+      var tickColor = cs.getPropertyValue('--chart-tick').trim() || '#6b6960';
+      var gridColor = cs.getPropertyValue('--chart-grid').trim() || 'rgba(255,255,255,0.04)';
       ci = new Chart(ctx, {
         type: 'line',
         data: {
@@ -980,8 +1115,8 @@
           responsive: true,
           maintainAspectRatio: false,
           scales: {
-            y: { min: 0, max: 100, ticks: { callback: function (v) { return v + '%' }, color: '#6b6960' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-            x: { title: { display: true, text: 'Episode', color: '#6b6960' }, ticks: { color: '#6b6960', maxTicksLimit: 10 }, grid: { display: false } }
+            y: { min: 0, max: 100, ticks: { callback: function (v) { return v + '%' }, color: tickColor }, grid: { color: gridColor } },
+            x: { title: { display: true, text: 'Episode', color: tickColor }, ticks: { color: tickColor, maxTicksLimit: 10 }, grid: { display: false } }
           },
           plugins: { legend: { display: false } }
         }

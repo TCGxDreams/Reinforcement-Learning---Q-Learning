@@ -1,0 +1,181 @@
+
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.formula-box { background: var(--color-background-secondary, #f5f5f5); border-radius: var(--border-radius-lg, 12px); padding: 20px 24px; margin-bottom: 20px; text-align: center; }
+.formula { font-size: 18px; font-family: var(--font-mono, monospace); line-height: 2; color: var(--color-text-primary, #1a1a1a); }
+.formula .alpha { color: #E24B4A; font-weight: 500; }
+.formula .gamma { color: #378ADD; font-weight: 500; }
+.formula .eps { color: #639922; font-weight: 500; }
+.formula .reward { color: #BA7517; font-weight: 500; }
+.card { background: var(--color-background-primary, #fff); border: 0.5px solid var(--color-border-tertiary, rgba(0,0,0,0.15)); border-radius: var(--border-radius-lg, 12px); padding: 16px 20px; margin-bottom: 12px; }
+.card h3 { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+.card p { font-size: 14px; line-height: 1.7; color: var(--color-text-secondary, #555); }
+.tag { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 6px; margin-right: 6px; }
+.tag-a { background: #FCEBEB; color: #791F1F; }
+.tag-g { background: #E6F1FB; color: #0C447C; }
+.tag-e { background: #EAF3DE; color: #27500A; }
+.tag-r { background: #FAEEDA; color: #633806; }
+.example { background: var(--color-background-secondary, #f5f5f5); border-radius: var(--border-radius-md, 8px); padding: 12px 16px; margin-top: 10px; font-family: var(--font-mono, monospace); font-size: 13px; line-height: 1.9; color: var(--color-text-primary, #1a1a1a); }
+.sep { border-top: 0.5px solid var(--color-border-tertiary, rgba(0,0,0,0.15)); margin: 16px 0; }
+.slider-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+.slider-row label { font-size: 13px; min-width: 50px; color: var(--color-text-secondary, #666); }
+.slider-row input[type=range] { flex: 1; }
+.slider-row span { font-size: 14px; font-weight: 500; min-width: 40px; }
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.demo-cell { background: var(--color-background-secondary, #f5f5f5); border-radius: var(--border-radius-md, 8px); padding: 10px; text-align: center; }
+.demo-cell .dl { font-size: 11px; color: var(--color-text-secondary, #666); }
+.demo-cell .dv { font-size: 18px; font-weight: 500; margin-top: 2px; }
+</style>
+
+<div style="padding: 0.5rem 0;">
+
+<div class="formula-box">
+  <div class="formula" id="mainFormula"></div>
+</div>
+
+<div class="card" id="card-alpha">
+  <h3><span class="tag tag-a" id="tagA"></span> <span id="hA"></span></h3>
+  <p id="pA"></p>
+  <div class="example" id="exA"></div>
+</div>
+
+<div class="card" id="card-gamma">
+  <h3><span class="tag tag-g" id="tagG"></span> <span id="hG"></span></h3>
+  <p id="pG"></p>
+  <div class="example" id="exG"></div>
+</div>
+
+<div class="card" id="card-eps">
+  <h3><span class="tag tag-e" id="tagE"></span> <span id="hE"></span></h3>
+  <p id="pE"></p>
+  <div class="example" id="exE"></div>
+</div>
+
+<div class="card" id="card-reward">
+  <h3><span class="tag tag-r" id="tagR"></span> <span id="hR"></span></h3>
+  <p id="pR"></p>
+  <div class="example" id="exR"></div>
+</div>
+
+<div class="sep"></div>
+
+<div class="card">
+  <h3 id="hDemo"></h3>
+  <p id="pDemo" style="margin-bottom:8px;"></p>
+  <div class="slider-row">
+    <label id="slA"></label>
+    <input type="range" id="dAlpha" min="0" max="100" value="15">
+    <span id="dAlphaV">0.15</span>
+  </div>
+  <div class="slider-row">
+    <label id="slG"></label>
+    <input type="range" id="dGamma" min="0" max="100" value="80">
+    <span id="dGammaV">0.80</span>
+  </div>
+  <div id="demoSetup" style="font-size:13px;color:var(--color-text-secondary,#666);margin:10px 0;"></div>
+  <div class="example" id="demoCalc"></div>
+  <div class="demo-grid">
+    <div class="demo-cell"><div class="dl" id="dlOld"></div><div class="dv" id="dvOld">0.000</div></div>
+    <div class="demo-cell"><div class="dl" id="dlNew"></div><div class="dv" id="dvNew" style="color:#378ADD;">0.000</div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// All Vietnamese text via JS to avoid encoding issues
+document.getElementById('mainFormula').innerHTML =
+  'Q(s,a) \u2190 Q(s,a) + <span class="alpha">\u03B1</span> \u00D7 [ <span class="reward">R</span> + <span class="gamma">\u03B3</span> \u00D7 max Q(s\',a\') - Q(s,a) ]';
+
+// Alpha card
+document.getElementById('tagA').textContent = '\u03B1';
+document.getElementById('hA').textContent = 'Learning Rate (t\u1ED1c \u0111\u1ED9 h\u1ECDc)';
+document.getElementById('pA').innerHTML =
+  '\u03B1 quy\u1EBFt \u0111\u1ECBnh agent h\u1ECDc <b>nhanh hay ch\u1EADm</b> t\u1EEB tr\u1EA3i nghi\u1EC7m m\u1EDBi. ' +
+  'Gi\u00E1 tr\u1ECB t\u1EEB 0 \u0111\u1EBFn 1.<br>' +
+  '\u2022 \u03B1 = 0: Kh\u00F4ng h\u1ECDc g\u00EC (Q kh\u00F4ng thay \u0111\u1ED5i)<br>' +
+  '\u2022 \u03B1 nh\u1ECF (0.01\u20130.1): H\u1ECDc ch\u1EADm, \u1ED5n \u0111\u1ECBnh<br>' +
+  '\u2022 \u03B1 l\u1EDBn (0.5\u20131.0): H\u1ECDc nhanh, nh\u01B0ng dao \u0111\u1ED9ng nhi\u1EC1u';
+document.getElementById('exA').innerHTML =
+  'V\u00ED d\u1EE5: Q c\u0169 = 2.0, m\u1EE5c ti\u00EAu = 5.0<br>' +
+  '\u03B1=0.1 \u2192 Q m\u1EDBi = 2.0 + 0.1\u00D7(5.0 - 2.0) = <b>2.3</b> (ti\u1EBFn ch\u1EADm)<br>' +
+  '\u03B1=0.9 \u2192 Q m\u1EDBi = 2.0 + 0.9\u00D7(5.0 - 2.0) = <b>4.7</b> (ti\u1EBFn nhanh)';
+
+// Gamma card
+document.getElementById('tagG').textContent = '\u03B3';
+document.getElementById('hG').textContent = 'Discount Factor (h\u1EC7 s\u1ED1 chi\u1EBFt kh\u1EA5u)';
+document.getElementById('pG').innerHTML =
+  '\u03B3 quy\u1EBFt \u0111\u1ECBnh agent <b>coi tr\u1ECDng t\u01B0\u01A1ng lai bao nhi\u00EAu</b>. ' +
+  'Gi\u00E1 tr\u1ECB t\u1EEB 0 \u0111\u1EBFn 1.<br>' +
+  '\u2022 \u03B3 = 0: Ch\u1EC9 quan t\u00E2m ph\u1EA7n th\u01B0\u1EDFng tr\u01B0\u1EDBc m\u1EAFt (v\u00E1n hi\u1EC7n t\u1EA1i)<br>' +
+  '\u2022 \u03B3 = 0.9: Coi tr\u1ECDng c\u1EA3 bonus th\u1EAFng 2/3 v\u00E1n \u1EDF cu\u1ED1i<br>' +
+  '\u2022 \u03B3 = 1: Ph\u1EA7n th\u01B0\u1EDFng t\u01B0\u01A1ng lai quan tr\u1ECDng b\u1EB1ng hi\u1EC7n t\u1EA1i';
+document.getElementById('exG').innerHTML =
+  'Trong b\u00E0i o\u1EB3n t\u00F9 x\u00EC v\u1EDBi 3 v\u00E1n:<br>' +
+  'V\u00E1n 1 (s1): R = +1, v\u00E0 max Q(s2) = 3.0<br>' +
+  '\u03B3=0.9 \u2192 m\u1EE5c ti\u00EAu = 1 + 0.9\u00D73.0 = <b>3.7</b> (t\u00EDnh c\u1EA3 ti\u1EC1m n\u0103ng s2)<br>' +
+  '\u03B3=0.0 \u2192 m\u1EE5c ti\u00EAu = 1 + 0\u00D73.0 = <b>1.0</b> (ch\u1EC9 v\u00E1n n\u00E0y)';
+
+// Epsilon card
+document.getElementById('tagE').textContent = '\u03B5';
+document.getElementById('hE').textContent = 'Exploration Rate (t\u1EC9 l\u1EC7 kh\u00E1m ph\u00E1)';
+document.getElementById('pE').innerHTML =
+  '\u03B5 c\u00E2n b\u1EB1ng gi\u1EEFa <b>khai th\u00E1c</b> (exploit: ch\u1ECDn action t\u1ED1t nh\u1EA5t \u0111\u00E3 bi\u1EBFt) ' +
+  'v\u00E0 <b>kh\u00E1m ph\u00E1</b> (explore: th\u1EED action ng\u1EABu nhi\u00EAn).<br>' +
+  '\u2022 \u03B5 = 0: Lu\u00F4n ch\u1ECDn action t\u1ED1t nh\u1EA5t (greedy) \u2192 c\u00F3 th\u1EC3 b\u1ECF l\u1EE1 action t\u1ED1t h\u01A1n<br>' +
+  '\u2022 \u03B5 = 0.3: 30% th\u1EED ng\u1EABu nhi\u00EAn, 70% ch\u1ECDn t\u1ED1t nh\u1EA5t<br>' +
+  '\u2022 \u03B5 = 1: Ho\u00E0n to\u00E0n ng\u1EABu nhi\u00EAn (kh\u00F4ng h\u1ECDc g\u00EC)';
+document.getElementById('exE').innerHTML =
+  'N\u1EBFu Q(s1) = [K\u00E9o: 0.5, B\u00FAa: 1.2, Bao: 0.3]<br>' +
+  '\u03B5=0.3 \u2192 70% ch\u1ECDn B\u00FAa (Q cao nh\u1EA5t), 30% ch\u1ECDn ng\u1EABu nhi\u00EAn<br>' +
+  'Th\u01B0\u1EDDng gi\u1EA3m \u03B5 d\u1EA7n theo th\u1EDDi gian (\u03B5-decay)';
+
+// Reward card
+document.getElementById('tagR').textContent = 'R';
+document.getElementById('hR').textContent = 'Reward (ph\u1EA7n th\u01B0\u1EDFng)';
+document.getElementById('pR').innerHTML =
+  'Trong b\u00E0i o\u1EB3n t\u00F9 x\u00EC c\u1EE7a b\u1EA1n:<br>' +
+  '\u2022 Th\u1EAFng 1 v\u00E1n: R = <b>+1</b><br>' +
+  '\u2022 Thua 1 v\u00E1n: R = <b>-1</b><br>' +
+  '\u2022 H\u00F2a 1 v\u00E1n: R = <b>0</b><br>' +
+  '\u2022 V\u00E1n cu\u1ED1i (s3) n\u1EBFu th\u1EAFng 2/3: R += <b>+10</b> (bonus)';
+document.getElementById('exR').innerHTML =
+  'Agent th\u1EAFng v\u00E1n 1 (+1), thua v\u00E1n 2 (-1), th\u1EAFng v\u00E1n 3 (+1)<br>' +
+  '\u2192 Th\u1EAFng 2/3 v\u00E1n \u2192 v\u00E1n 3 nh\u1EADn: R = 1 + 10 = <b>+11</b>';
+
+// Demo section
+document.getElementById('hDemo').textContent = 'Th\u1EED t\u00EDnh Q-value';
+document.getElementById('pDemo').textContent = 'K\u00E9o slider \u0111\u1EC3 xem c\u00F4ng th\u1EE9c thay \u0111\u1ED5i:';
+document.getElementById('slA').textContent = '\u03B1';
+document.getElementById('slG').textContent = '\u03B3';
+document.getElementById('dlOld').textContent = 'Q c\u0169';
+document.getElementById('dlNew').textContent = 'Q m\u1EDBi';
+
+var Qold = 0.5, R = 1, maxNext = 2.0;
+
+function updateDemo() {
+  var a = parseInt(document.getElementById('dAlpha').value)/100;
+  var g = parseInt(document.getElementById('dGamma').value)/100;
+  document.getElementById('dAlphaV').textContent = a.toFixed(2);
+  document.getElementById('dGammaV').textContent = g.toFixed(2);
+
+  var target = R + g * maxNext;
+  var Qnew = Qold + a * (target - Qold);
+
+  document.getElementById('demoSetup').innerHTML =
+    'Gi\u1EA3 s\u1EED: Q(s1, K\u00E9o) = '+Qold.toFixed(1)+
+    ', R = +'+R+' (th\u1EAFng), max Q(s2) = '+maxNext.toFixed(1);
+
+  document.getElementById('demoCalc').innerHTML =
+    'M\u1EE5c ti\u00EAu = R + \u03B3 \u00D7 max Q(s2) = '+R+' + '+g.toFixed(2)+' \u00D7 '+maxNext.toFixed(1)+' = <b>'+target.toFixed(2)+'</b><br>' +
+    'Q m\u1EDBi = '+Qold.toFixed(1)+' + '+a.toFixed(2)+' \u00D7 ('+target.toFixed(2)+' - '+Qold.toFixed(1)+') = <b>'+Qnew.toFixed(3)+'</b>';
+
+  document.getElementById('dvOld').textContent = Qold.toFixed(3);
+  document.getElementById('dvNew').textContent = Qnew.toFixed(3);
+}
+
+document.getElementById('dAlpha').oninput = updateDemo;
+document.getElementById('dGamma').oninput = updateDemo;
+updateDemo();
+</script>

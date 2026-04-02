@@ -1,0 +1,170 @@
+
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.card { background: var(--color-background-primary, #fff); border: 0.5px solid var(--color-border-tertiary, rgba(0,0,0,0.15)); border-radius: var(--border-radius-lg, 12px); padding: 16px; }
+.card h3 { font-size: 14px; font-weight: 500; color: var(--color-text-secondary, #666); margin-bottom: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 6px 8px; text-align: center; border-bottom: 0.5px solid var(--color-border-tertiary, rgba(0,0,0,0.15)); }
+th { font-weight: 500; color: var(--color-text-secondary, #666); font-size: 12px; }
+.hl { background: #E6F1FB; color: #0C447C; font-weight: 500; border-radius: 4px; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.metric { background: var(--color-background-secondary, #f5f5f5); border-radius: var(--border-radius-md, 8px); padding: 10px 14px; text-align: center; min-width: 90px; }
+.metric .lb { font-size: 11px; color: var(--color-text-secondary, #666); margin-bottom: 2px; }
+.metric .vl { font-size: 20px; font-weight: 500; }
+.log { max-height: 200px; overflow-y: auto; font-size: 12px; font-family: var(--font-mono, monospace); line-height: 1.8; color: var(--color-text-secondary, #666); padding: 8px; background: var(--color-background-secondary, #f5f5f5); border-radius: var(--border-radius-md, 8px); }
+.w { color: #639922; } .l { color: #E24B4A; } .d { color: #BA7517; }
+.params { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+.params label { font-size: 13px; color: var(--color-text-secondary, #666); }
+.params input { width: 70px; }
+.full { grid-column: 1 / -1; }
+</style>
+
+<div style="padding: 0.5rem 0;">
+<div class="params">
+  <label id="lbl-a"></label> <input type="number" id="alpha" value="0.1" step="0.05" min="0" max="1">
+  <label id="lbl-g"></label> <input type="number" id="gamma" value="0.9" step="0.05" min="0" max="1">
+  <label id="lbl-e"></label> <input type="number" id="epsilon" value="0.3" step="0.05" min="0" max="1">
+</div>
+<div class="controls">
+  <button id="btn1"></button>
+  <button id="btn10"></button>
+  <button id="btn100"></button>
+  <button id="btnR"></button>
+</div>
+<div class="grid">
+  <div class="card"><h3 id="hQ"></h3><table id="qtable"><thead><tr><th>State</th><th id="thA1"></th><th id="thA2"></th><th id="thA3"></th></tr></thead><tbody></tbody></table></div>
+  <div class="card"><h3 id="hS"></h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><div class="metric"><div class="lb">Episodes</div><div class="vl" id="ep-count">0</div></div><div class="metric"><div class="lb" id="lblWR"></div><div class="vl" id="win-rate">0%</div></div><div class="metric"><div class="lb" id="lblW"></div><div class="vl" id="wins" style="color:#639922">0</div></div><div class="metric"><div class="lb" id="lblL"></div><div class="vl" id="losses" style="color:#E24B4A">0</div></div></div></div>
+  <div class="card full"><h3 id="hLog"></h3><div class="log" id="log"></div></div>
+</div>
+<div style="position:relative;width:100%;height:250px;margin-top:8px;"><canvas id="chart"></canvas></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+var ACT = ['K\u00e9o','B\u00faa','Bao'];
+var EMJ = ['\u270C\uFE0F','\u270A','\uD83D\uDD90\uFE0F'];
+var ST = ['s1','s2','s3'];
+
+document.getElementById('lbl-a').textContent = '\u03B1 (learning rate):';
+document.getElementById('lbl-g').textContent = '\u03B3 (discount):';
+document.getElementById('lbl-e').textContent = '\u03B5 (exploration):';
+document.getElementById('btn1').textContent = 'Ch\u1EA1y 1 episode';
+document.getElementById('btn10').textContent = 'Ch\u1EA1y 10 episodes';
+document.getElementById('btn100').textContent = 'Ch\u1EA1y 100 episodes';
+document.getElementById('btnR').textContent = 'Reset';
+document.getElementById('hQ').textContent = 'Q-table (agent)';
+document.getElementById('hS').textContent = 'Th\u1ED1ng k\u00EA';
+document.getElementById('hLog').textContent = 'Log chi ti\u1EBFt (episode g\u1EA7n nh\u1EA5t)';
+document.getElementById('thA1').textContent = 'K\u00e9o (1)';
+document.getElementById('thA2').textContent = 'B\u00faa (2)';
+document.getElementById('thA3').textContent = 'Bao (3)';
+document.getElementById('lblWR').textContent = 'T\u1EC9 l\u1EC7 th\u1EAFng';
+document.getElementById('lblW').textContent = 'Th\u1EAFng';
+document.getElementById('lblL').textContent = 'Thua';
+document.getElementById('log').textContent = 'Nh\u1EA5n "Ch\u1EA1y 1 episode" \u0111\u1EC3 b\u1EAFt \u0111\u1EA7u...';
+
+document.getElementById('btn1').onclick = function(){ runOne(false); };
+document.getElementById('btn10').onclick = function(){ runN(10); };
+document.getElementById('btn100').onclick = function(){ runN(100); };
+document.getElementById('btnR').onclick = resetAll;
+
+var Q = [[0,0,0],[0,0,0],[0,0,0]];
+var stats = {ep:0, w:0, l:0, d:0};
+var wrHist = [];
+
+function reward(ag, op) {
+  if (ag === op) return 0;
+  if ((ag===0&&op===2)||(ag===1&&op===0)||(ag===2&&op===1)) return -1;
+  return 1;
+}
+
+function pick(s, eps) {
+  if (Math.random() < eps) return Math.floor(Math.random()*3);
+  var b=0; for(var a=1;a<3;a++) if(Q[s][a]>Q[s][b]) b=a; return b;
+}
+
+function runOne(silent) {
+  var al = parseFloat(document.getElementById('alpha').value);
+  var gm = parseFloat(document.getElementById('gamma').value);
+  var ep = parseFloat(document.getElementById('epsilon').value);
+  var rw=0, rl=0, lines=[];
+
+  for (var s=0; s<3; s++) {
+    var act = pick(s, ep);
+    var opp = Math.floor(Math.random()*3);
+    var r = reward(act, opp);
+    var cls = r>0?'w':r<0?'l':'d';
+    var txt = r>0?'TH\u1EAENG':r<0?'THUA':'H\u00d2A';
+    if(r>0) rw++; if(r<0) rl++;
+
+    if(s<2){
+      var mx = Math.max(Q[s+1][0],Q[s+1][1],Q[s+1][2]);
+      Q[s][act] += al*(r + gm*mx - Q[s][act]);
+    } else {
+      var br = r;
+      if(rw>=2) br+=10; else if(rl>=2) br-=5;
+      Q[s][act] += al*(br - Q[s][act]);
+    }
+    lines.push('<span class="'+cls+'">V\u00e1n '+(s+1)+' ('+ST[s]+'): Agent='+ACT[act]+' '+EMJ[act]+' vs \u0110\u1ED1i th\u1EE7='+ACT[opp]+' '+EMJ[opp]+' \u2192 '+txt+' (r='+(r>0?'+':'')+r+')</span>');
+  }
+
+  var mr = rw>=2?'w':rl>=2?'l':'d';
+  if(mr==='w'){stats.w++;lines.push('<span class="w"><b>\u2192 CHI\u1EBEN TH\u1EAENG tr\u1EADn (+10 bonus)</b></span>');}
+  else if(mr==='l'){stats.l++;lines.push('<span class="l"><b>\u2192 THUA tr\u1EADn (-5)</b></span>');}
+  else{stats.d++;lines.push('<span class="d"><b>\u2192 H\u00d2A tr\u1EADn</b></span>');}
+
+  stats.ep++;
+  wrHist.push(Math.round(stats.w/stats.ep*100));
+
+  if(!silent){
+    document.getElementById('log').innerHTML = lines.join('<br>');
+    updateUI();
+  }
+}
+
+function runN(n){for(var i=0;i<n-1;i++)runOne(true);runOne(false);}
+
+function resetAll(){
+  Q=[[0,0,0],[0,0,0],[0,0,0]];
+  stats={ep:0,w:0,l:0,d:0};
+  wrHist=[];
+  document.getElementById('log').textContent='Nh\u1EA5n "Ch\u1EA1y 1 episode" \u0111\u1EC3 b\u1EAFt \u0111\u1EA7u...';
+  updateUI();
+}
+
+function updateUI(){
+  var tb=document.querySelector('#qtable tbody');
+  tb.innerHTML='';
+  for(var s=0;s<3;s++){
+    var mx=0;for(var a=1;a<3;a++)if(Q[s][a]>Q[s][mx])mx=a;
+    var row='<tr><td style="font-weight:500">'+ST[s]+'</td>';
+    for(var a=0;a<3;a++){
+      var v=Q[s][a].toFixed(3);
+      row+='<td class="'+(a===mx&&Q[s][a]!==0?'hl':'')+'">'+v+'</td>';
+    }
+    tb.innerHTML+=row+'</tr>';
+  }
+  document.getElementById('ep-count').textContent=stats.ep;
+  document.getElementById('wins').textContent=stats.w;
+  document.getElementById('losses').textContent=stats.l;
+  var rt=stats.ep>0?Math.round(stats.w/stats.ep*100):0;
+  document.getElementById('win-rate').textContent=rt+'%';
+  updateChart();
+}
+
+var ci=null;
+function updateChart(){
+  var ctx=document.getElementById('chart');
+  var dk=matchMedia('(prefers-color-scheme:dark)').matches;
+  if(ci)ci.destroy();
+  ci=new Chart(ctx,{
+    type:'line',
+    data:{labels:wrHist.map(function(_,i){return i+1}),datasets:[{label:'Win rate %',data:wrHist,borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.1)',fill:true,tension:0.3,pointRadius:wrHist.length>50?0:3,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+'%'},color:dk?'#b4b2a9':'#888780'},grid:{color:dk?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)'}},x:{title:{display:true,text:'Episode',color:dk?'#b4b2a9':'#888780'},ticks:{color:dk?'#b4b2a9':'#888780',maxTicksLimit:10},grid:{display:false}}},plugins:{legend:{display:false}}}
+  });
+}
+
+updateUI();
+</script>
